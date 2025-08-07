@@ -1,0 +1,40 @@
+.title {
+    display: flex;
+    flex-direction: row;
+
+    height: fit-content;
+    width: 100%;
+
+    justify-content: center;
+    align-items: center;
+
+    font-family: var(--font-face-main);
+}
+
+.title > img {
+    max-height: 6rem;
+}
+
+.bouncer {
+    position: absolute;
+    display: inline-block;
+    height: 8rem;
+    width: 8rem;
+    background-color: transparent;
+    text-decoration: none;
+    font-family: sans-serif;
+    cursor: var(--cursor-pointer) 24 24, auto;
+    z-index: 10;
+}
+
+.bouncer img {
+    height: 8rem;
+    width: 8rem;
+    object-fit: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bouncer {
+        display: none;
+    }
+}

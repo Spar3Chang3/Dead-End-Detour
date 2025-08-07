@@ -1,0 +1,28 @@
+<svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="white"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+>
+    <!--
+      This SVG creates a northwest-pointing arrow, sized for a cursor.
+      - `width` and `height` set the display size.
+      - `viewBox` defines the coordinate system.
+      - `fill="none"` means the shape isn't filled with color.
+      - `stroke="white"` sets the arrow color to white.
+      - `stroke-width` sets the thickness of the line.
+      - `stroke-linecap="round"` makes the ends of the lines circular.
+      - `stroke-linejoin="round"` rounds the corners where lines meet.
+    -->
+
+    <!-- The main shaft of the arrow, from bottom-right to top-left -->
+    <line x1="19" y1="19" x2="5" y2="5" />
+
+    <!-- The arrowhead, created with a polyline -->
+    <polyline points="12 5 5 5 5 12" />
+</svg>

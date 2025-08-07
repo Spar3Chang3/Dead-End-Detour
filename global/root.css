@@ -1,0 +1,191 @@
+@font-face {
+    font-family: 'GrungeMusic';
+    src: url('/global/assets/fonts/Grunge-Music.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'FustyLuggs';
+    src: url('/global/assets/fonts/FustyLuggs.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --color-bg-primary: #0D0D0D;
+    --color-bg-secondary: #1C1C1C;
+
+    --color-fg-primary: #E0E0E0;
+    --color-fg-secondary: #B0B0B0;
+
+    --color-complementary: #f7db17;
+    --color-focus: #f95003;
+
+    --color-border: #dcdcdc;
+
+    --img-bg-main: url("/global/assets/backgrounds/Grunge-Dark-Background-main.jpg");
+    --img-bg-sides: url("/global/assets/backgrounds/DarkGrunge-Background.jpg");
+    --img-bg-sign: url("/global/assets/backgrounds/Link-Dead-End-Background.svg");
+    --img-bg-sign-highlight: url("/global/assets/backgrounds/Link-Dead-End-Background-Highlighted.svg");
+
+    --cursor-standard: url("/global/assets/cursors/standard.svg");
+    --cursor-pointer: url("/global/assets/cursors/pointer.svg");
+
+    --font-size-standard: 1rem;
+    --font-size-small: 0.6rem;
+    --font-size-emphasis: 1.5rem;
+    --font-spacing-standard: 1.5rem;
+    --font-spacing-small: 1rem;
+    --font-spacing-emphasis: 2rem;
+
+    --font-face-main: GrungeMusic, sans-serif;
+    --font-face-text: FustyLuggs, sans-serif;
+}
+
+html, body {
+    display: flex;
+    height: 100%;
+    width: 100%;
+
+    margin: 0;
+    padding: 0.25rem 0;
+
+    background-image: var(--img-bg-sides);
+    background-repeat: repeat;
+    background-origin: border-box;
+    background-position: center;
+    background-size: cover;
+
+    box-sizing: border-box;
+
+    cursor: var(--cursor-standard) 24 24, auto;
+}
+
+main {
+    flex-direction: column;
+    height: 100%;
+    width: 70%;
+    flex: 1;
+
+    align-self: center;
+    box-sizing: border-box;
+    padding: 0 0.5rem 0.5rem 0.5rem;
+
+    background-image: var(--img-bg-main);
+    background-repeat: repeat;
+    background-origin: border-box;
+    background-position: center;
+    background-size: cover;
+
+    color: var(--color-fg-primary);
+    border: 0.1rem solid var(--color-border);
+    font-family: var(--font-face-text);
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 15%;
+
+    gap: 4rem;
+    padding: 0.5rem;
+
+    background: transparent;
+    box-sizing: border-box;
+}
+
+.sidebar > img {
+    object-fit: contain;
+}
+
+.navbar {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    min-height: 8rem;
+    height: 10%;
+    width: 100%;
+    box-sizing: border-box;
+
+    align-items: center;
+
+    background-color: transparent;
+    padding: 0 1rem;
+    font-family: var(--font-face-main);
+    color: var(--color-fg-secondary);
+    border-bottom: 0.1rem solid var(--color-border);
+}
+
+.nav-logo {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 100%;
+    width: fit-content;
+    font-size: var(--font-size-emphasis);
+}
+
+.nav-spacer {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    flex: 1;
+}
+
+.nav-list-cont {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: fit-content;
+
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+
+    gap: 1rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.nav-list-el {
+    display: grid;
+    place-items: center;
+
+    width: 80%;
+    height: 80%;
+    text-wrap: wrap;
+    text-align: center;
+
+    padding: 0.5rem;
+
+    background-image: var(--img-bg-sign);
+    background-origin: border-box;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.nav-list-a {
+    display: grid;
+    place-items: center;
+
+    width: 80%;
+    height: 80%;
+    padding: 0;
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-bg-primary);
+    text-decoration: underline;
+    cursor: var(--cursor-pointer) 24 24, auto;
+}
+
+.nav-list-el:hover {
+    background-image: var(--img-bg-sign-highlight);
+}
