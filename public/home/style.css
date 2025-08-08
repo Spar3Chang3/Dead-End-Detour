@@ -9,6 +9,7 @@
     align-items: center;
 
     font-family: var(--font-face-main);
+    text-align: center;
 }
 
 .title > img {
@@ -23,18 +24,38 @@
     background-color: transparent;
     text-decoration: none;
     font-family: sans-serif;
-    cursor: var(--cursor-pointer) 24 24, auto;
+    cursor:
+        var(--cursor-pointer) 24 24,
+        auto;
     z-index: 10;
 }
 
 .bouncer img {
     height: 8rem;
     width: 8rem;
+    aspect-ratio: 1 / 1;
     object-fit: contain;
 }
 
 @media (prefers-reduced-motion: reduce) {
     .bouncer {
         display: none;
+    }
+}
+
+@media only screen and (max-width: 768px) {
+    .bouncer,
+    .bouncer img {
+        height: 4rem;
+        width: 4rem;
+    }
+
+    .title {
+        font-size: var(--font-size-standard);
+        line-height: 3rem;
+    }
+
+    .title > img {
+        max-height: 4rem;
     }
 }
