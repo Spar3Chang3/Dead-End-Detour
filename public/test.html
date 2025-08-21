@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Retro Wave Player</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=VT323&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            /* --- General Styles --- */
+            body {
+                font-family: "VT323", monospace;
+                background-color: #333;
+                color: #eaeaea;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                padding: 1rem;
+                font-size: 18px;
+            }
+
+            /* --- Player Container --- */
+            .player-container {
+                width: 100%;
+                max-width: 600px;
+                background-color: #c2c2c2; /* Classic beige/gray */
+                border: 4px solid #555;
+                box-shadow:
+                    inset -4px -4px 0px 0px #888,
+                    inset 4px 4px 0px 0px #ffffff;
+                padding: 1.5rem;
+                color: #333;
+            }
+
+            /* --- Canvas & Screen --- */
+            .screen {
+                background-color: #1a2b1a; /* Dark green LCD screen */
+                border: 2px solid #222;
+                box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.5);
+                padding: 0.5rem;
+                margin-bottom: 1.5rem;
+            }
+            #waveformCanvas {
+                width: 100%;
+                height: 120px;
+                cursor: pointer;
+            }
+
+            /* --- Info & Time Display --- */
+            .song-info {
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+            #songTitle {
+                font-size: 2rem;
+                text-shadow: 1px 1px #fff;
+            }
+            #artistName {
+                font-size: 1.2rem;
+                color: #444;
+            }
+            .time-display {
+                display: flex;
+                justify-content: space-between;
+                font-size: 1.2rem;
+                background: #222;
+                color: #00ff00; /* Bright green text */
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+                margin-bottom: 1.5rem;
+                border: 2px solid #444;
+            }
+
+            /* --- Controls --- */
+            .controls {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+            }
+
+            /* --- Buttons --- */
+            .btn {
+                font-family: "VT323", monospace;
+                font-size: 1.2rem;
+                padding: 0.75rem 1rem;
+                border: 2px solid #333;
+                background-color: #b0b0b0;
+                box-shadow:
+                    inset -2px -2px 0px 0px #888,
+                    inset 2px 2px 0px 0px #ffffff;
+                cursor: pointer;
+                transition: all 0.1s ease;
+            }
+            .btn:active {
+                box-shadow: inset 2px 2px 0px 0px #888;
+                transform: translateY(2px);
+            }
+
+            .play-pause-btn {
+                width: 70px;
+                height: 70px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #d9534f; /* Red button */
+            }
+            .play-pause-btn svg {
+                width: 40px;
+                height: 40px;
+                fill: #fff;
+                filter: drop-shadow(2px 2px 0px #00000055);
+            }
+            .play-pause-btn:disabled {
+                background-color: #888;
+                cursor: not-allowed;
+            }
+            #pauseIcon {
+                display: none;
+            }
+
+            /* --- File Input --- */
+            .file-upload-label {
+                flex-grow: 1;
+                text-align: center;
+            }
+            #audioFile {
+                display: none; /* Hide the actual input */
+            }
+
+            /* --- Volume Slider --- */
+            .volume-control {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-grow: 1;
+            }
+            #volumeSlider {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 100%;
+                height: 15px;
+                background: #555;
+                outline: none;
+                border: 2px solid #333;
+            }
+            #volumeSlider::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 25px;
+                height: 25px;
+                background: #b0b0b0;
+                cursor: pointer;
+                border: 2px solid #333;
+                box-shadow:
+                    inset -2px -2px 0px 0px #888,
+                    inset 2px 2px 0px 0px #ffffff;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="player-container">
+            <!-- Canvas for Waveform Visualization -->
+            <div class="screen">
+                <canvas id="waveformCanvas"></canvas>
+            </div>
+
+            <!-- Audio Element (hidden) -->
+            <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+            <!-- Song Information -->
+            <div class="song-info">
+                <h2 id="songTitle">Loading...</h2>
+                <p id="artistName">Please wait</p>
+            </div>
+
+            <!-- Time Display -->
+            <div class="time-display">
+                <span id="currentTime">00:00</span>
+                <span id="totalDuration">00:00</span>
+            </div>
+
+            <!-- Player Controls -->
+            <div class="controls">
+                <!-- File Upload -->
+                <label for="audioFile" class="btn file-upload-label">
+                    Load File
+                </label>
+                <input type="file" id="audioFile" accept="audio/*" />
+
+                <!-- Play/Pause Button -->
+                <button id="playPauseBtn" class="btn play-pause-btn">
+                    <svg id="playIcon" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"></path>
+                    </svg>
+                    <svg id="pauseIcon" viewBox="0 0 24 24">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
+                    </svg>
+                </button>
+
+                <!-- Volume Control -->
+                <div class="volume-control">
+                    <span>VOL</span>
+                    <input
+                        id="volumeSlider"
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value="1"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <script>
+            window.addEventListener("DOMContentLoaded", () => {
+                // --- DOM Element References ---
+                const audioPlayer = document.getElementById("audioPlayer");
+                const audioFileInput = document.getElementById("audioFile");
+                const playPauseBtn = document.getElementById("playPauseBtn");
+                const playIcon = document.getElementById("playIcon");
+                const pauseIcon = document.getElementById("pauseIcon");
+                const volumeSlider = document.getElementById("volumeSlider");
+                const currentTimeEl = document.getElementById("currentTime");
+                const totalDurationEl =
+                    document.getElementById("totalDuration");
+                const songTitleEl = document.getElementById("songTitle");
+                const artistNameEl = document.getElementById("artistName");
+                const canvas = document.getElementById("waveformCanvas");
+                const canvasCtx = canvas.getContext("2d");
+
+                // --- Audio API Setup ---
+                let audioContext;
+                let analyser;
+                let source;
+                let dataArray;
+                let isAudioContextInitialized = false;
+
+                // --- State Variables ---
+                let hoverX = -1; // Tracks mouse X position for the hover indicator
+
+                // --- Initialization ---
+                resizeCanvas();
+                window.addEventListener("resize", resizeCanvas);
+                loadDefaultAudio();
+
+                /**
+                 * Loads a default audio file.
+                 */
+                function loadDefaultAudio() {
+                    const defaultAudioUrl =
+                        "https://cdn.pixabay.com/audio/2022/02/07/audio_a05bf2AB9C.mp3";
+                    audioPlayer.src = defaultAudioUrl;
+                    songTitleEl.textContent = "Synthwave";
+                    artistNameEl.textContent = "By Pixabay";
+                }
+
+                /**
+                 * Initializes the AudioContext.
+                 */
+                function initializeAudioContext() {
+                    if (isAudioContextInitialized) return;
+
+                    audioContext = new (window.AudioContext ||
+                        window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 8192;
+                    source = audioContext.createMediaElementSource(audioPlayer);
+
+                    source.connect(analyser);
+                    analyser.connect(audioContext.destination);
+
+                    const bufferLength = analyser.frequencyBinCount;
+                    dataArray = new Uint8Array(bufferLength);
+
+                    isAudioContextInitialized = true;
+                }
+
+                /**
+                 * Draws the waveform and hover indicator on the canvas.
+                 */
+                function drawWaveform() {
+                    requestAnimationFrame(drawWaveform);
+
+                    canvasCtx.fillStyle = "#1a2b1a";
+                    canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    if (!isAudioContextInitialized) {
+                        canvasCtx.strokeStyle = "#00ff00";
+                        canvasCtx.beginPath();
+                        canvasCtx.moveTo(0, canvas.height / 2);
+                        canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                        canvasCtx.stroke();
+                    } else {
+                        analyser.getByteFrequencyData(dataArray);
+
+                        const bufferLength = analyser.frequencyBinCount;
+                        const barWidth = (canvas.width / bufferLength) * 1.5;
+                        let x = 0;
+                        const progress = audioPlayer.duration
+                            ? audioPlayer.currentTime / audioPlayer.duration
+                            : 0;
+
+                        for (let i = 0; i < bufferLength; i++) {
+                            const barHeight =
+                                dataArray[i] * (canvas.height / 255);
+                            const isPlayed = x / canvas.width < progress;
+                            canvasCtx.fillStyle = isPlayed
+                                ? "#00ff00"
+                                : "#005000";
+                            canvasCtx.fillRect(
+                                x,
+                                (canvas.height - barHeight) / 2,
+                                barWidth,
+                                barHeight,
+                            );
+                            x += barWidth + 1;
+                        }
+                    }
+
+                    // --- NEW: Draw Hover Indicator ---
+                    if (hoverX !== -1 && audioPlayer.duration) {
+                        canvasCtx.fillStyle = "#ffff00"; // Bright yellow for the indicator
+                        canvasCtx.fillRect(hoverX, 0, 2, canvas.height); // Draw a 2px wide vertical line
+                    }
+                }
+
+                /**
+                 * Toggles audio playback.
+                 */
+                function togglePlayPause() {
+                    if (!audioPlayer.src) return;
+                    if (!isAudioContextInitialized) initializeAudioContext();
+
+                    if (audioPlayer.paused) {
+                        audioPlayer.play();
+                        playIcon.style.display = "none";
+                        pauseIcon.style.display = "block";
+                    } else {
+                        audioPlayer.pause();
+                        playIcon.style.display = "block";
+                        pauseIcon.style.display = "none";
+                    }
+                }
+
+                /**
+                 * Formats time in seconds to MM:SS.
+                 */
+                function formatTime(time) {
+                    if (isNaN(time)) return "00:00";
+                    const minutes = Math.floor(time / 60);
+                    const seconds = Math.floor(time % 60);
+                    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+                }
+
+                /**
+                 * Sets canvas dimensions.
+                 */
+                function resizeCanvas() {
+                    canvas.width = canvas.clientWidth * window.devicePixelRatio;
+                    canvas.height =
+                        canvas.clientHeight * window.devicePixelRatio;
+                }
+
+                // --- Event Listeners ---
+
+                audioFileInput.addEventListener("change", (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        const objectUrl = URL.createObjectURL(file);
+                        audioPlayer.src = objectUrl;
+                        songTitleEl.textContent = file.name.replace(
+                            /\.[^/.]+$/,
+                            "",
+                        );
+                        artistNameEl.textContent = "Local File";
+                        if (!audioPlayer.paused) togglePlayPause();
+                    }
+                });
+
+                playPauseBtn.addEventListener("click", togglePlayPause);
+
+                volumeSlider.addEventListener("input", (event) => {
+                    audioPlayer.volume = event.target.value;
+                });
+
+                audioPlayer.addEventListener("timeupdate", () => {
+                    currentTimeEl.textContent = formatTime(
+                        audioPlayer.currentTime,
+                    );
+                });
+
+                audioPlayer.addEventListener("loadedmetadata", () => {
+                    totalDurationEl.textContent = formatTime(
+                        audioPlayer.duration,
+                    );
+                });
+
+                canvas.addEventListener("click", (event) => {
+                    if (!audioPlayer.duration) return;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const percentage = x / rect.width;
+                    audioPlayer.currentTime = percentage * audioPlayer.duration;
+                });
+
+                // --- NEW: Listeners for the hover indicator ---
+                canvas.addEventListener("mousemove", (event) => {
+                    const rect = canvas.getBoundingClientRect();
+                    // Scale mouse position to canvas resolution
+                    hoverX =
+                        (event.clientX - rect.left) * window.devicePixelRatio;
+                });
+
+                canvas.addEventListener("mouseleave", () => {
+                    hoverX = -1; // Reset when mouse leaves the canvas
+                });
+
+                audioPlayer.addEventListener("ended", () => {
+                    playIcon.style.display = "block";
+                    pauseIcon.style.display = "none";
+                });
+
+                // --- Start the animation loop ---
+                drawWaveform();
+            });
+        </script>
+    </body>
+</html>

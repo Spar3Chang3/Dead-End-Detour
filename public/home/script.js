@@ -1,6 +1,7 @@
 function constructBouncer() {
   const anchor = document.createElement("a");
   anchor.ariaHidden = "true";
+  anchor.href = "/car-game";
   anchor.id = "bouncer";
   anchor.className = "bouncer";
   anchor.innerHTML = `
