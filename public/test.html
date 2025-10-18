@@ -271,7 +271,7 @@
                     audioContext = new (window.AudioContext ||
                         window.webkitAudioContext)();
                     analyser = audioContext.createAnalyser();
-                    analyser.fftSize = 8192;
+                    analyser.fftSize = 256;
                     source = audioContext.createMediaElementSource(audioPlayer);
 
                     source.connect(analyser);

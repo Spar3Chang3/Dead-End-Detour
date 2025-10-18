@@ -1,0 +1,74 @@
+:root {
+    --lane-time: 0.5s;
+}
+html,
+body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: 100%;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    font-family: "Press Start 2P", cursive;
+    touch-action: manipulation; /* Prevents double-tap to zoom on mobile */
+    background-color: blue;
+    box-sizing: border-box;
+}
+* {
+    box-sizing: border-box;
+}
+.game-container {
+    position: relative;
+    display: block;
+    min-height: 720px;
+    min-width: 480px;
+    max-height: 720px;
+    max-width: 480px;
+
+    background-color: #575b64;
+    border: 0.25rem solid #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.car {
+    position: absolute;
+    transition: left 0.1s ease;
+}
+.car img {
+    max-height: 86px;
+    max-width: 42px;
+    object-fit: contain;
+    object-position: center;
+}
+.lane-line {
+    position: absolute;
+    top: 0;
+    width: 5px;
+    height: 720px;
+    background-image: repeating-linear-gradient(
+        rgba(255, 255, 255, 0.4) 0,
+        rgba(255, 255, 255, 0.4) 20px,
+        transparent 20px,
+        transparent 40px
+    );
+    background-repeat: repeat-y;
+    animation: road-animation var(--lane-time) linear infinite;
+}
+@keyframes road-animation {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 0 80px;
+    }
+}
+.obstacle,
+.powerup {
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    font-size: 40px;
+    line-height: 50px;
+    text-align: center;
+}
