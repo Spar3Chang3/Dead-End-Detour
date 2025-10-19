@@ -14,7 +14,10 @@
     <body>
         <div class="ui-wrapper">
             <h1 class="text">Lane Dodger</h1>
-            <h2 id="score" class="text">Score: 0</h2>
+            <div class="score-cont">
+                <h2 id="score" class="text">Score: 0</h2>
+                <span id="multiplier" class="multiplier"></span>
+            </div>
 
             <!-- Game Container -->
             <div id="game-container" class="game-container">
@@ -22,15 +25,16 @@
                 <div
                     id="player-car"
                     class="car"
-                    style="bottom: 60px; left: calc(16.65% - 21px)"
+                    style="bottom: 100px; left: calc(16.65% - 21px)"
                 >
                     <img
+                        id="player-car-img"
                         src="/global/assets/imgs/player.png"
                         alt="Player Car"
                     />
                 </div>
                 <!-- Cop Car -->
-                <div id="cop-car" class="car" style="bottom: -100px">
+                <div id="cop-car" class="car cop" style="bottom: 0px">
                     <img src="/global/assets/imgs/cop.png" alt="Cop Car" />
                 </div>
 

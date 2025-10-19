@@ -1,5 +1,6 @@
 :root {
     --lane-time: 0.5s;
+    --top: -50px;
 }
 html,
 body {
@@ -23,6 +24,22 @@ h2 {
     color: whitesmoke;
     text-align: center;
 }
+.score-cont {
+    position: relative;
+    display: inline-block;
+    padding: 0;
+    margin: 0;
+}
+.multiplier {
+    font-size: 1.5rem;
+    position: absolute;
+    color: yellow;
+    top: 0.5rem;
+    right: -3.5rem;
+    animation: multiplier-animation 0.5s infinite ease;
+    padding: 0;
+    margin: 0;
+}
 .ui-wrapper {
     display: grid;
     place-items: center;
@@ -43,20 +60,30 @@ h2 {
 }
 .car {
     position: absolute;
-    max-height: 86px;
-    max-width: 42px;
+    height: 86px;
+    width: 42px;
     transition:
         left 0.25s ease,
-        rotate 0.5s ease;
+        transform 0.5s ease;
     border-radius: 8px;
     border: 0.1rem solid transparent;
     z-index: 2;
+    overflow: visible;
 }
 .car img {
-    max-height: 86px;
-    max-width: 42px;
+    position: relative;
+    height: 86px;
+    width: 42px;
     object-fit: contain;
     object-position: center;
+    outline: 0.25rem solid transparent;
+    box-sizing: content-box;
+    border-radius: 8px;
+}
+.cop img {
+    box-sizing: border-box;
+    padding: 0;
+    animation: cop-animation 1s infinite ease;
 }
 .lane-line {
     position: absolute;
@@ -74,20 +101,36 @@ h2 {
 .object {
     position: absolute;
     max-height: 86px;
-    max-width: 42px;
+    max-width: 56px;
     z-index: 2;
+    top: -86px;
+    --top: -50px;
 }
 .object img {
     max-height: 86px;
-    max-width: 42px;
+    max-width: 56px;
     object-fit: contain;
     object-position: center;
 }
-
+.object.semi {
+    top: -212px;
+    --top: -212px;
+}
 .object.semi,
 .object.semi img {
     max-height: 212px;
     max-width: 72px;
+}
+.object.exploding,
+.object.exploding img {
+    max-height: 96px;
+    max-width: 96px;
+    overflow: visible;
+    object-fit: cover;
+}
+.object.powerup {
+    box-shadow: 0px 0px 10px skyblue;
+    border-radius: 50%;
 }
 
 .game-over-modal {
@@ -159,10 +202,10 @@ h2 {
 
 @keyframes obj-animation {
     from {
-        top: -50px;
+        top: var(--top);
     }
     to {
-        top: 770px;
+        top: calc(720px - var(--top));
     }
 }
 
@@ -175,11 +218,59 @@ h2 {
     }
 }
 
+.shield-level-1 {
+    background: radial-gradient(circle, #5ec8fa 0%, #0078ff 100%);
+}
+.shield-level-2 {
+    background: radial-gradient(circle, #3fe3c6 0%, #00c0a0 100%);
+}
+.shield-level-3 {
+    background: radial-gradient(circle, #7ff971 0%, #00d12a 100%);
+}
+.shield-level-4 {
+    background: radial-gradient(circle, #a5ff4f 0%, #6bff00 100%);
+}
+
 @keyframes invincible-animation {
     from {
         filter: hue-rotate(0deg);
     }
     to {
         filter: hue-rotate(360deg);
+    }
+}
+
+@keyframes cop-animation {
+    0% {
+        box-shadow: 0 0 30px 10px rgba(255, 0, 0, 0.8);
+        filter: brightness(1.3) drop-shadow(0 0 10px red);
+    }
+    25% {
+        box-shadow: 0 0 10px 5px rgba(255, 0, 0, 0);
+        filter: brightness(1);
+    }
+    50% {
+        box-shadow: 0 0 30px 10px rgba(0, 0, 255, 0.8);
+        filter: brightness(1.3) drop-shadow(0 0 10px blue);
+    }
+    75% {
+        box-shadow: 0 0 10px 5px rgba(0, 0, 255, 0);
+        filter: brightness(1);
+    }
+    100% {
+        box-shadow: 0 0 30px 10px rgba(255, 0, 0, 0.8);
+        filter: brightness(1.3) drop-shadow(0 0 10px red);
+    }
+}
+
+@keyframes multiplier-animation {
+    0% {
+        transform: scale(1) rotate(-10deg);
+    }
+    50% {
+        transform: scale(1.12) rotate(-10deg);
+    }
+    100% {
+        transform: scale(1) rotate(-10deg);
     }
 }

@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const gameCont = document.getElementById("game-container");
   const playerCar = document.getElementById("player-car");
+  const playerCarImg = document.getElementById("player-car-img");
   const copCar = document.getElementById("cop-car");
   const scoreDisplay = document.getElementById("score");
   const gameOverModal = document.getElementById("game-over-modal");
@@ -8,18 +9,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const restartBtn = document.getElementById("restart-button");
   const startBtn = document.getElementById("start-button");
   const lanes = document.querySelectorAll(".lane-line");
+  const multiplierText = document.getElementById("multiplier");
 
   // Constants
   const SURF_SOUND = "/global/assets/data/surf.mp3";
-  const BASE_SPEED = 6;
+  const SIREN_SOUND = "/global/assets/data/police-siren.mp3";
+  const BASE_DIFF_INC = 5;
+  const BASE_SPEED = 5;
   const BASE_LANE = 1;
+  const BASE_MULTIPLIER = 1;
+  const BASE_SHIELD_LVL = 0;
   const BASE_COP_DIST = -100;
   const LANE_ARR_MAX = 2;
   const LANE_ARR_MIN = 0;
   const IMG_SOURCE = "/global/assets/imgs";
   const LANE_WIDTH = gameCont.clientWidth / 6;
   const CAR_OFFSET = 20;
+  const POWERUP_LIFETIME = 10000;
   const LANES = [LANE_WIDTH, LANE_WIDTH * 3, LANE_WIDTH * 5];
+  const SHIELD_COLORS = ["transparent", "#5EC8FA", "#3FE3C6", "#7FF971"];
   const STATIC_OBSTACLES = [
     `<img src="${IMG_SOURCE}/road-block-obj.png" alt="Road Block"/>`,
     `<img src="${IMG_SOURCE}/wood-obj.png" alt="Wood Log"/>`,
@@ -34,28 +42,46 @@ document.addEventListener("DOMContentLoaded", () => {
     `<img src="${IMG_SOURCE}/shield-obj.png" alt="Shield"/>`,
     `<img src="${IMG_SOURCE}/multiplier-obj.png" alt="Multiplier"/>`,
   ];
-  const POWERUP_TYPES = ["invincibility", "shield", "multiplier"];
+  const POWERUP_TYPES = {
+    list: ["invincible", "shield", "multiply"],
+    invincible: "invincible",
+    shield: "shield",
+    multiply: "multiply",
+    na: "not_applicable",
+  };
+  const DYN_TYPES = {
+    list: ["sedan", "semi"],
+    sedan: "sedan",
+    semi: "semi",
+  };
+  const EFFECT_TYPES = {
+    explode: `<img src="${IMG_SOURCE}/fire-effect.gif" alt="Explosion"/>`,
+  };
 
   // Game State
   let score = 0;
-  let incrementScore = 5;
+  let scoreDiffIncrease = 8;
   let gameSpeed = 5;
   let isGameOver = true;
   let shieldLevel = 0;
+  let lastInvincibleTime = Date.now();
   let invincible = false;
   let endingGame = false;
+  let intro = true;
   let playerLane = 1;
   let copLane = 1;
   let copDistance = -100;
   let multiplier = 1;
 
   let objectInterval = 4000;
+  let pointInterval = null;
+  let multiplierTimes = [];
   let lastObjAdd = Date.now();
 
   let objects = new Map();
-  let powerupIntervals = [];
 
   let surfMusic = new Audio(SURF_SOUND);
+  let copMusic = new Audio(SIREN_SOUND);
 
   function init() {
     playerCar.style.left = `${LANES[playerLane] - CAR_OFFSET}px`;
@@ -69,11 +95,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function startGame() {
     score = 0;
-    gameSpeed = BASE_SPEED;
     isGameOver = false;
+    invincible = false;
+    endingGame = false;
+    gameSpeed = BASE_SPEED;
     playerLane = BASE_LANE;
     copLane = BASE_LANE;
     copDistance = BASE_COP_DIST;
+    multiplier = BASE_MULTIPLIER;
+    shieldLevel = BASE_SHIELD_LVL;
+    scoreDiffIncrease = BASE_DIFF_INC;
+    lastObjAdd = Date.now();
 
     playerCar.style.left = `${LANES[playerLane] - CAR_OFFSET}px`;
     copCar.style.left = `${LANES[copLane] - CAR_OFFSET}px`;
@@ -83,7 +115,14 @@ document.addEventListener("DOMContentLoaded", () => {
     startBtn.disabled = "true";
     scoreDisplay.textContent = "Score: 0";
 
+    intro = true;
+    copMusic.play();
     surfMusic.play();
+    surfMusic.loop = true;
+    multiplier.textContent = "x1";
+
+    pointInterval = setInterval(() => (score += multiplier), 2000);
+
     gameLoop();
   }
 
@@ -131,87 +170,128 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const randomLane = Math.floor(Math.random() * LANES.length);
     const id = `obj-${Date.now()}`;
+    const objEl = document.createElement("div");
+    objEl.classList.add("object");
+    objEl.id = id;
+
+    let objRefIndex = 0; // Yes, this is used across different ifs of varying array sizes. BUT, I figured it would be like 0.01ms faster
+
+    const objProps = {
+      element: objEl,
+      time: 1000,
+      dispatch: lastObjAdd, // Default, will be turned into Date.now()
+      speed: gameSpeed,
+      callback: function () {},
+      cleanup: function () {},
+    };
 
     // > 0.2 makes bad object
     if (Math.random() > 0.2) {
-      const obstacle = document.createElement("div");
-      obstacle.classList.add("object");
-      obstacle.id = id;
-      obstacle.style.top = "-50px";
-
+      // Either dynamic or static
       if (Math.random() > 0.5) {
-        const dynObj = Math.floor(Math.random() * DYNAMIC_OBSTACLES.length);
-        obstacle.innerHTML = DYNAMIC_OBSTACLES[dynObj];
-        if (dynObj === 1) {
-          obstacle.classList.add("semi");
+        // DYNAMIC:
+        objRefIndex = Math.floor(Math.random() * DYNAMIC_OBSTACLES.length);
+        objProps.time = 2000;
+        const dynType = DYN_TYPES.list[objRefIndex];
+
+        switch (dynType) {
+          case DYN_TYPES.sedan:
+            objEl.classList.add("sedan");
+            objEl.innerHTML = DYNAMIC_OBSTACLES[objRefIndex];
+            break;
+          case DYN_TYPES.semi:
+            objEl.classList.add("semi");
+            objEl.innerHTML = DYNAMIC_OBSTACLES[objRefIndex];
+            break;
+          default:
+            console.err(
+              `Dynamic type ${dynType} from index ${objRefIndex} does not match within the list of length ${DYN_TYPES.list.length}`,
+            );
         }
-        obstacle.style.left = `${LANES[randomLane] - CAR_OFFSET}px`;
-        gameCont.appendChild(obstacle);
-        runDynamicObject(obstacle);
+        objEl.style.left = `${LANES[randomLane] - CAR_OFFSET}px`; // TODO: change this to reflect both semi and sedan offsets properly
+        objEl.style.animation = `obj-animation ${objProps.speed * 2}s linear forwards`;
       } else {
-        obstacle.innerHTML =
-          STATIC_OBSTACLES[Math.floor(Math.random() * STATIC_OBSTACLES.length)];
-        obstacle.style.left = `${LANES[randomLane] - CAR_OFFSET}px`;
-        gameCont.appendChild(obstacle);
-        runStaticObject(obstacle);
+        objRefIndex = Math.floor(Math.random() * STATIC_OBSTACLES.length);
+        objEl.innerHTML = STATIC_OBSTACLES[objRefIndex];
+        objEl.style.left = `${LANES[randomLane] - CAR_OFFSET}px`;
+        objEl.style.animation = `obj-animation ${objProps.speed}s linear forwards`;
       }
 
-      objects.set(id, {
-        element: obstacle,
-        callback() {
-          if (invincible) return;
+      // Add applicable functions
+      objProps.callback = function callback() {
+        runFireEffect(objEl);
+        if (!invincible) {
           if (shieldLevel > 0) {
-            obstacle.remove();
             decrementShield();
           } else {
             isGameOver = true;
           }
-        },
-      });
+        }
+        setTimeout(() => {
+          objEl.remove();
+        }, 250); // TODO: STOP USING SETTIMEOUT YOU FUCKING NIMROD
+      };
+
+      objProps.cleanup = function cleanup() {
+        objEl.remove();
+        score += multiplier;
+        objects.delete(id);
+      };
+
+      // Otherwise, do this shit for powerups
     } else {
-      const powerup = document.createElement("div");
-      const powerupType = Math.floor(Math.random() * POWERUPS.length);
-      powerup.classList.add("object");
-      powerup.id = id;
-      powerup.innerHTML = POWERUPS[powerupType];
-      powerup.style.left = `${LANES[randomLane] - CAR_OFFSET}px`;
-      gameCont.appendChild(powerup);
-      runStaticObject(powerup);
+      const objRefIndex = Math.floor(Math.random() * POWERUPS.length);
+      objEl.innerHTML = POWERUPS[objRefIndex];
+      objEl.style.left = `${LANES[randomLane] - CAR_OFFSET}px`;
+      objEl.style.animation = `obj-animation ${objProps.speed}s linear forwards`;
+      objEl.classList.add("powerup");
 
-      objects.set(id, {
-        element: powerup,
-        powerupType: POWERUP_TYPES[powerupType],
-        callback() {
-          powerup.remove();
-          activatePowerup(powerupType);
-          console.log("called activatePowerup with type ", powerupType);
-        },
-      });
+      const powerupType = POWERUP_TYPES.list[objRefIndex];
+      switch (powerupType) {
+        case POWERUP_TYPES.invincible:
+          objProps.callback = function callback() {
+            objEl.remove();
+            activateInvincible();
+            objects.delete(id);
+          };
+          break;
+        case POWERUP_TYPES.shield:
+          objProps.callback = function callback() {
+            objEl.remove();
+            incrementShield();
+            objects.delete(id);
+          };
+          break;
+        case POWERUP_TYPES.multiply:
+          objProps.callback = function callback() {
+            objEl.remove();
+            addMultiply();
+            objects.delete(id);
+          };
+          break;
+        default:
+          console.err(
+            `Powerup type ${objProps.powerup} from index ${objRefIndex} does not match within the list of length ${POWERUP_TYPES.list.length}`,
+          );
+          break;
+      }
+
+      objProps.cleanup = function cleanup() {
+        objEl.remove();
+        objects.delete(id);
+      };
     }
-  }
 
-  function runDynamicObject(obstacle, id) {
-    obstacle.style.animation = `obj-animation ${gameSpeed * 2}s linear forwards`;
-    setTimeout(() => {
-      obstacle.remove();
-      score += 1 * multiplier;
-      objects.delete(id);
-    }, gameSpeed * 2000);
-  }
+    gameCont.appendChild(objEl);
 
-  function runStaticObject(object, id) {
-    object.style.animation = `obj-animation ${gameSpeed}s linear forwards`;
-    setTimeout(() => {
-      object.remove();
-      score += 1 * multiplier;
-      objects.delete(id);
-    }, gameSpeed * 1000);
+    objProps.dispatch = Date.now();
+    objects.set(id, objProps);
   }
 
   function moveCop() {
     if (copLane !== playerLane) {
       copLane = playerLane;
-      copCar.style.left = `${LANES[copLane]}px`;
+      copCar.style.left = `${LANES[copLane] - CAR_OFFSET}px`;
     }
     if (copDistance > BASE_COP_DIST) {
       copDistance -= 0.15;
@@ -219,78 +299,46 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function activateInvincible() {
+    invincible = true;
+    lastInvincibleTime = Date.now();
+    playerCarImg.style.animation = "invincible-animation 10s infinite linear";
+  }
+
+  function deactivateInvincible() {
+    invincible = false;
+    playerCarImg.style.animation = "none";
+  }
+
+  function addMultiply() {
+    multiplier *= 2;
+    multiplierTimes.push(Date.now());
+  }
+
+  function removeMultiply() {
+    multiplier /= 2;
+    multiplierTimes.shift();
+  }
+
   function decrementShield() {
     if (!invincible) {
       shieldLevel -= 1;
     }
-    switch (shieldLevel) {
-      case 0:
-        playerCar.style.border = "0.1rem solid transparent";
-        break;
-      case 1:
-        playerCar.style.border = "0.1rem solid lightblue";
-        break;
-      case 2:
-        playerCar.style.border = "0.1rem solid lightgreen";
-        break;
-      case 3:
-        playerCar.style.border = "0.1rem solid pink";
-        break;
-      default:
-        playerCar.style.border = "0.1rem solid red";
-        break;
-    }
+    const shieldIndex = Math.min(shieldLevel, SHIELD_COLORS.length - 1);
+    playerCarImg.style.border = `0.${shieldIndex}rem solid ${SHIELD_COLORS[shieldIndex]}`;
+    playerCar.style.boxShadow = `0px 0px 8px ${SHIELD_COLORS[shieldIndex]}`;
   }
 
   function incrementShield() {
     shieldLevel += 1;
-    switch (shieldLevel) {
-      case 0:
-        playerCar.style.border = "0.1rem solid transparent";
-        break;
-      case 1:
-        playerCar.style.border = "0.1rem solid lightblue";
-        break;
-      case 2:
-        playerCar.style.border = "0.1rem solid lightgreen";
-        break;
-      case 3:
-        playerCar.style.border = "0.1rem solid pink";
-        break;
-      default:
-        playerCar.style.border = "0.1rem solid red";
-        break;
-    }
+    const shieldIndex = Math.min(shieldLevel, SHIELD_COLORS.length - 1);
+    playerCarImg.style.border = `0.${shieldIndex}rem solid ${SHIELD_COLORS[shieldIndex]}`;
+    playerCar.style.boxShadow = `0px 0px 8px ${SHIELD_COLORS[shieldIndex]}`;
   }
 
-  function activatePowerup(powerupType) {
-    switch (powerupType) {
-      case 0:
-        invincible = true;
-        playerCar.querySelector("img").style.animation =
-          "invincible-animation 10s infinite linear";
-        const interval = setTimeout(() => {
-          invincible = false;
-          playerCar.querySelector("img").style.animation = "none";
-        }, 10000);
-        powerupIntervals.push(interval);
-        break;
-      case 1:
-        incrementShield();
-        break;
-      case 2:
-        multiplier *= 2;
-        const fuck_you_javascript_for_not_allowing_the_same_names_even_though_its_always_a_break =
-          setTimeout(() => {
-            multiplier /= 2;
-          }, 10000);
-        powerupIntervals.push(
-          fuck_you_javascript_for_not_allowing_the_same_names_even_though_its_always_a_break,
-        );
-        break;
-      default:
-        break;
-    }
+  function runFireEffect(element) {
+    element.classList.add("exploding");
+    element.innerHTML = EFFECT_TYPES.explode;
   }
 
   function checkCollision(a, b) {
@@ -306,6 +354,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function gameLoop() {
     requestAnimationFrame(gameLoop);
+    const now = Date.now();
+
+    if (intro) {
+      copDistance = 0;
+      copCar.style.bottom = `${copDistance}px`;
+      intro = false;
+    }
 
     if (isGameOver && !invincible && shieldLevel === 0 && !endingGame) {
       endingGame = true;
@@ -313,7 +368,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (checkCollision(playerCar, copCar)) {
+      endingGame = true;
       isGameOver = true;
+      endGame();
     }
 
     moveCop();
@@ -322,38 +379,66 @@ document.addEventListener("DOMContentLoaded", () => {
       if (checkCollision(playerCar, obj.element)) {
         obj.callback();
       }
+      if (now - obj.dispatch >= obj.time * obj.speed) {
+        obj.cleanup();
+      }
     });
 
-    if (score >= incrementScore) {
-      incrementScore += 5;
-      gameSpeed - 1 >= 1 ? gameSpeed-- : (gameSpeed = 1);
-      objectInterval = gameSpeed * 1000;
+    if (invincible && now - lastInvincibleTime >= POWERUP_LIFETIME) {
+      deactivateInvincible();
+    }
 
-      for (const el of lanes) {
-        el.style.animation = `road-animation 0.${gameSpeed}s linear infinite`;
+    if (multiplierTimes.length > 0) {
+      if (
+        now - multiplierTimes[multiplierTimes.length - 1] >=
+        POWERUP_LIFETIME
+      ) {
+        removeMultiply();
       }
     }
 
-    if (Date.now() - lastObjAdd > objectInterval) {
+    if (score >= scoreDiffIncrease) {
+      scoreDiffIncrease += 8;
+      gameSpeed = Math.max(gameSpeed - 1, 0.5); // Yes, this is bad. Come up with a better approach and do it for me :)
+      objectInterval = gameSpeed * 1000;
+
+      lanes.forEach((el) => {
+        el.style.animation = `road-animation 0.${gameSpeed}s linear infinite`;
+      });
+
+      if (gameSpeed === 0.5) {
+        scoreDiffIncrease = 99999999; // Keeps score from triggering again after final stage, yes, this is 0 iq. Thank you for insulting me
+      }
+    }
+
+    if (now - lastObjAdd >= objectInterval) {
       createObject();
       lastObjAdd = Date.now();
     }
 
     scoreDisplay.textContent = `Score: ${score}`;
+    multiplierText.textContent = `x${multiplier}`;
   }
 
   function endGame() {
-    clearInterval(objectInterval);
-    for (let i = 0; i < powerupIntervals.length; i++) {
-      clearTimeout(powerupIntervals[i]);
-    }
-    powerupIntervals = [];
+    clearInterval(pointInterval);
     gameOverModal.classList.remove("hidden");
     startBtn.classList.remove("hidden");
 
     finalScoreDisplay.textContent = `Last Game: ${score}`;
 
+    objects.forEach((obj, id) => {
+      obj.cleanup();
+    });
+
     shieldLevel = 0;
+    multiplier = 1;
+    scoreDiffIncrease = 8;
+    gameSpeed = 5;
+
+    lanes.forEach((el) => {
+      el.style.animation = `road-animation 0.${gameSpeed}s linear infinite`;
+    });
 
     surfMusic.pause();
     surfMusic.currentTime = 0;
