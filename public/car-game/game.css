@@ -12,11 +12,20 @@ body {
     align-items: center;
     font-family: "Press Start 2P", cursive;
     touch-action: manipulation; /* Prevents double-tap to zoom on mobile */
-    background-color: blue;
+    background-color: #152238;
     box-sizing: border-box;
 }
 * {
     box-sizing: border-box;
+}
+h1,
+h2 {
+    color: whitesmoke;
+    text-align: center;
+}
+.ui-wrapper {
+    display: grid;
+    place-items: center;
 }
 .game-container {
     position: relative;
@@ -30,10 +39,18 @@ body {
     border: 0.25rem solid #1a1a1a;
     border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 .car {
     position: absolute;
-    transition: left 0.1s ease;
+    max-height: 86px;
+    max-width: 42px;
+    transition:
+        left 0.25s ease,
+        rotate 0.5s ease;
+    border-radius: 8px;
+    border: 0.1rem solid transparent;
+    z-index: 2;
 }
 .car img {
     max-height: 86px;
@@ -53,8 +70,102 @@ body {
         transparent 40px
     );
     background-repeat: repeat-y;
-    animation: road-animation var(--lane-time) linear infinite;
 }
+.object {
+    position: absolute;
+    max-height: 86px;
+    max-width: 42px;
+    z-index: 2;
+}
+.object img {
+    max-height: 86px;
+    max-width: 42px;
+    object-fit: contain;
+    object-position: center;
+}
+
+.object.semi,
+.object.semi img {
+    max-height: 212px;
+    max-width: 72px;
+}
+
+.game-over-modal {
+    position: fixed;
+    display: grid;
+    place-items: center;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 5;
+}
+
+.game-over-container {
+    display: flex;
+    flex-direction: column;
+    height: 80%;
+    width: 80%;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    background-color: #192841;
+}
+
+.start-btn {
+    margin-top: 2rem;
+}
+
+.start-btn,
+.restart-btn {
+    /* Font Styling */
+    font-family: "Press Start 2P", cursive; /* Make sure to import this font */
+    color: white;
+    font-size: 1rem;
+    text-transform: uppercase;
+
+    /* Button Shape and Color */
+    background-color: #34495e; /* A slightly lighter blue for the button face */
+    border: 4px solid #1a252f; /* Darker border creates a shadow/depth effect */
+    padding: 1rem 2rem;
+    border-radius: 12px; /* This creates the rounded corners */
+
+    /* Interaction */
+    cursor: pointer;
+    position: relative; /* Needed for the "push" effect on click */
+    transition: all 0.1s ease-in-out;
+
+    /* Ensure pixelated rendering for the text */
+    image-rendering: pixelated;
+}
+
+.start-btn:hover,
+.restart-btn:hover {
+    background-color: #4a6572;
+}
+
+.start-btn:active,
+.restart-btn:active {
+    transform: scale(0.95);
+}
+
+.game-over-modal.hidden {
+    display: none;
+}
+
+@keyframes obj-animation {
+    from {
+        top: -50px;
+    }
+    to {
+        top: 770px;
+    }
+}
+
 @keyframes road-animation {
     from {
         background-position: 0 0;
@@ -63,12 +174,12 @@ body {
         background-position: 0 80px;
     }
 }
-.obstacle,
-.powerup {
-    width: 50px;
-    height: 50px;
-    position: absolute;
-    font-size: 40px;
-    line-height: 50px;
-    text-align: center;
+
+@keyframes invincible-animation {
+    from {
+        filter: hue-rotate(0deg);
+    }
+    to {
+        filter: hue-rotate(360deg);
+    }
 }

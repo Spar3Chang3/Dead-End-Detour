@@ -9,13 +9,12 @@
             rel="stylesheet"
         />
         <link rel="stylesheet" href="/car-game/game.css" />
+        <script src="/car-game/game.js" defer></script>
     </head>
-    <body
-        class="bg-gray-800 flex items-center justify-center h-screen overflow-hidden"
-    >
+    <body>
         <div class="ui-wrapper">
-            <h1 class="text-4xl mb-4">Lane Dodger</h1>
-            <div id="score" class="text-2xl mb-4">Score: 0</div>
+            <h1 class="text">Lane Dodger</h1>
+            <h2 id="score" class="text">Score: 0</h2>
 
             <!-- Game Container -->
             <div id="game-container" class="game-container">
@@ -36,303 +35,36 @@
                 </div>
 
                 <!-- Lane Lines -->
-                <div class="lane-line" style="left: 33.33%"></div>
-                <div class="lane-line" style="left: 66.66%"></div>
+                <div
+                    class="lane-line"
+                    style="
+                        left: 33.33%;
+                        animation: road-animation 0.6s linear infinite;
+                    "
+                ></div>
+                <div
+                    class="lane-line"
+                    style="
+                        left: 66.66%;
+                        animation: road-animation 0.6s linear infinite;
+                    "
+                ></div>
                 <!-- Obstacles & Powerups will be added here by JavaScript -->
             </div>
 
             <!-- Game Over Modal -->
-            <div
-                id="game-over-modal"
-                class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-20"
-            >
-                <div
-                    class="bg-gray-800 p-8 rounded-lg text-center shadow-lg border-2 border-red-500"
-                >
-                    <h2 class="text-4xl text-red-500 mb-4">Game Over</h2>
-                    <p id="final-score" class="text-2xl mb-6">Your Score: 0</p>
-                    <button
-                        id="restart-button"
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-xl"
-                    >
+            <div id="game-over-modal" class="game-over-modal hidden">
+                <div class="game-over-container">
+                    <h2>Game Over</h2>
+                    <p id="final-score">Your Score: 0</p>
+                    <button id="restart-button" class="restart-btn">
                         Restart
                     </button>
                 </div>
             </div>
 
             <!-- Start Game Button -->
-            <button
-                id="start-button"
-                class="mt-6 bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-xl"
-            >
-                Start Game
-            </button>
+            <button id="start-button" class="start-btn">Start Game</button>
         </div>
-
-        <!--<script>
-            // DOM Elements
-            const gameContainer = document.getElementById("game-container");
-            const car = document.getElementById("car");
-            const copCar = document.getElementById("cop-car");
-            const scoreDisplay = document.getElementById("score");
-            const gameOverModal = document.getElementById("game-over-modal");
-            const finalScoreDisplay = document.getElementById("final-score");
-            const restartButton = document.getElementById("restart-button");
-            const startButton = document.getElementById("start-button");
-
-            // Game State
-            let score = 0;
-            let baseGameSpeed = 4;
-            let gameSpeed = 4;
-            let isGameOver = true;
-            let playerLane = 1; // 0, 1, 2
-            let copLane = 1;
-            let copDistance = -100; // Vertical position from bottom
-            const lanes = [
-                gameContainer.clientWidth / 6 - car.clientWidth / 2,
-                gameContainer.clientWidth / 2 - car.clientWidth / 2,
-                (gameContainer.clientWidth * 5) / 6 - car.clientWidth / 2,
-            ];
-            let gameLoopInterval;
-            let objectInterval;
-            let powerupTimeout;
-
-            const obstacleEmojis = ["🪵", "🛢️", " टायर ", "🚧"];
-            const powerupEmojis = ["⏳", "⚡"]; // Slow-mo, Speed-up
-
-            // --- Game Initialization ---
-            function init() {
-                car.style.left = `${lanes[playerLane]}px`;
-                copCar.style.left = `${lanes[copLane]}px`;
-                copCar.style.bottom = `${copDistance}px`;
-                startButton.addEventListener("click", startGame);
-                restartButton.addEventListener("click", startGame);
-                document.addEventListener("keydown", handleKeyPress);
-                gameContainer.addEventListener("click", handleTouch);
-            }
-
-            function startGame() {
-                score = 0;
-                baseGameSpeed = 4;
-                gameSpeed = 4;
-                isGameOver = false;
-                playerLane = 1;
-                copLane = 1;
-                copDistance = -100; // Start cop further back
-
-                car.style.left = `${lanes[playerLane]}px`;
-                copCar.style.left = `${lanes[copLane]}px`;
-                copCar.style.bottom = `${copDistance}px`;
-
-                gameOverModal.classList.add("hidden");
-                startButton.classList.add("hidden");
-                scoreDisplay.textContent = "Score: 0";
-
-                clearTimeout(powerupTimeout);
-                document
-                    .querySelectorAll(".obstacle, .powerup")
-                    .forEach((el) => el.remove());
-
-                gameLoopInterval = setInterval(gameLoop, 1000 / 60); // 60 FPS
-                objectInterval = setInterval(createObject, 1200);
-            }
-
-            // --- Player Controls ---
-            function handleKeyPress(e) {
-                if (isGameOver) return;
-                if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a")
-                    movePlayer(-1);
-                if (e.key === "ArrowRight" || e.key.toLowerCase() === "d")
-                    movePlayer(1);
-            }
-
-            function handleTouch(e) {
-                if (isGameOver) return;
-                const containerMidX =
-                    gameContainer.getBoundingClientRect().left +
-                    gameContainer.clientWidth / 2;
-                movePlayer(e.clientX < containerMidX ? -1 : 1);
-            }
-
-            function movePlayer(direction) {
-                const nextLane = playerLane + direction;
-
-                // Check if player is trying to move off the road
-                if (nextLane < 0 || nextLane > 2) {
-                    // Penalize by bringing the cop closer
-                    copDistance += 50;
-                    copCar.style.bottom = `${copDistance}px`;
-                } else {
-                    // Valid move
-                    playerLane = nextLane;
-                    car.style.left = `${lanes[playerLane]}px`;
-                }
-            }
-
-            // --- Game Logic ---
-            function createObject() {
-                if (isGameOver) return;
-
-                const randomLane = Math.floor(Math.random() * 3);
-
-                // Decide whether to spawn an obstacle or a powerup
-                if (Math.random() > 0.2) {
-                    // 80% chance for obstacle
-                    const obstacle = document.createElement("div");
-                    obstacle.classList.add("obstacle");
-                    obstacle.innerHTML =
-                        obstacleEmojis[
-                            Math.floor(Math.random() * obstacleEmojis.length)
-                        ];
-                    obstacle.style.left = `${lanes[randomLane]}px`;
-                    obstacle.style.top = "-50px";
-                    gameContainer.appendChild(obstacle);
-                } else {
-                    // 20% chance for powerup
-                    const powerup = document.createElement("div");
-                    powerup.classList.add("powerup");
-                    powerup.innerHTML =
-                        powerupEmojis[
-                            Math.floor(Math.random() * powerupEmojis.length)
-                        ];
-                    powerup.style.left = `${lanes[randomLane]}px`;
-                    powerup.style.top = "-50px";
-                    gameContainer.appendChild(powerup);
-                }
-            }
-
-            function gameLoop() {
-                if (isGameOver) {
-                    clearInterval(gameLoopInterval);
-                    clearInterval(objectInterval);
-                    return;
-                }
-
-                moveCop();
-                moveObjects();
-                checkCollisions();
-                updateScoreAndSpeed();
-                checkGameOver();
-            }
-
-            function moveCop() {
-                // Cop tries to match the player's lane
-                if (copLane !== playerLane) {
-                    copLane = playerLane;
-                    copCar.style.left = `${lanes[copLane]}px`;
-                }
-                // Cop slowly creeps up or falls back
-                if (copDistance > -100) {
-                    copDistance -= 0.15; // Slowly falls back over time
-                    copCar.style.bottom = `${copDistance}px`;
-                }
-            }
-
-            function moveObjects() {
-                document
-                    .querySelectorAll(".obstacle, .powerup")
-                    .forEach((el) => {
-                        let topPosition = parseInt(
-                            window.getComputedStyle(el).getPropertyValue("top"),
-                        );
-                        el.style.top = `${topPosition + gameSpeed}px`;
-
-                        if (topPosition > gameContainer.clientHeight) {
-                            if (el.classList.contains("obstacle")) {
-                                score++; // Only score for dodging obstacles
-                            }
-                            el.remove();
-                        }
-                    });
-            }
-
-            function checkCollisions() {
-                const carRect = car.getBoundingClientRect();
-                document
-                    .querySelectorAll(".obstacle, .powerup")
-                    .forEach((el) => {
-                        const elRect = el.getBoundingClientRect();
-                        if (
-                            carRect.left < elRect.right &&
-                            carRect.right > elRect.left &&
-                            carRect.top < elRect.bottom &&
-                            carRect.bottom > elRect.top
-                        ) {
-                            if (el.classList.contains("obstacle")) {
-                                // Hitting an obstacle is now an instant game over
-                                endGame();
-                            } else if (el.classList.contains("powerup")) {
-                                // Hitting a powerup triggers its effect
-                                applyPowerup(el.innerHTML);
-                                el.remove(); // Remove powerup after collection
-                            }
-                        }
-                    });
-            }
-
-            function applyPowerup(type) {
-                clearTimeout(powerupTimeout); // Reset any existing powerup
-                gameSpeed = baseGameSpeed; // Reset to base speed first
-
-                if (type === "⏳") {
-                    // Slow-mo buff
-                    gameSpeed *= 0.6; // 40% slower
-                } else if (type === "⚡") {
-                    // Speed-up debuff
-                    gameSpeed *= 1.5; // 50% faster
-                }
-
-                // Powerup effect lasts for 3 seconds
-                powerupTimeout = setTimeout(() => {
-                    gameSpeed = baseGameSpeed;
-                }, 3000);
-            }
-
-            function updateScoreAndSpeed() {
-                scoreDisplay.textContent = `Score: ${score}`;
-                // Increase base speed as score goes up
-                if (score > 0 && score % 10 === 0) {
-                    baseGameSpeed += 0.1;
-                    // If no powerup is active, update current speed too
-                    if (gameSpeed === baseGameSpeed - 0.1) {
-                        gameSpeed = baseGameSpeed;
-                    }
-                }
-            }
-
-            function checkGameOver() {
-                // Game over if the cop catches the player
-                const carRect = car.getBoundingClientRect();
-                const copRect = copCar.getBoundingClientRect();
-                if (copRect.top <= carRect.bottom) {
-                    endGame();
-                }
-            }
-
-            function endGame() {
-                if (isGameOver) return; // Prevent endGame from being called multiple times
-                isGameOver = true;
-                clearInterval(gameLoopInterval);
-                clearInterval(objectInterval);
-                clearTimeout(powerupTimeout);
-
-                finalScoreDisplay.textContent = `Your Score: ${score}`;
-                gameOverModal.classList.remove("hidden");
-                startButton.classList.remove("hidden");
-            }
-
-            // --- Window Load & Resize ---
-            window.onload = init;
-            window.onresize = () => {
-                lanes[0] = gameContainer.clientWidth / 6 - car.clientWidth / 2;
-                lanes[1] = gameContainer.clientWidth / 2 - car.clientWidth / 2;
-                lanes[2] =
-                    (gameContainer.clientWidth * 5) / 6 - car.clientWidth / 2;
-                if (!isGameOver) {
-                    car.style.left = `${lanes[playerLane]}px`;
-                    copCar.style.left = `${lanes[copLane]}px`;
-                }
-            };
-        </script>-->
     </body>
 </html>
