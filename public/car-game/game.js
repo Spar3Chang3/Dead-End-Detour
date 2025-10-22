@@ -14,7 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Constants
   const SURF_SOUND = "/global/assets/data/surf.mp3";
   const SIREN_SOUND = "/global/assets/data/police-siren.mp3";
-  const BASE_DIFF_INC = 5;
+  const EXP_SOUND = "/global/assets/data/explosion.mp3";
+  const BASE_DIFF_INC = 8;
   const BASE_SPEED = 5;
   const BASE_LANE = 1;
   const BASE_MULTIPLIER = 1;
@@ -58,6 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
     explode: `<img src="${IMG_SOURCE}/fire-effect.gif" alt="Explosion"/>`,
   };
 
+  // TODO: add people plus points and animals insta lose - Viktor <3
+
   // Game State
   let score = 0;
   let scoreDiffIncrease = 8;
@@ -82,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let surfMusic = new Audio(SURF_SOUND);
   let copMusic = new Audio(SIREN_SOUND);
+  let expMusic = new Audio(EXP_SOUND);
 
   function init() {
     playerCar.style.left = `${LANES[playerLane] - CAR_OFFSET}px`;
@@ -220,6 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Add applicable functions
       objProps.callback = function callback() {
         runFireEffect(objEl);
+        objects.delete(id);
         if (!invincible) {
           if (shieldLevel > 0) {
             decrementShield();
@@ -322,7 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function decrementShield() {
     if (!invincible) {
-      shieldLevel -= 1;
+      shieldLevel--;
     }
     const shieldIndex = Math.min(shieldLevel, SHIELD_COLORS.length - 1);
     playerCarImg.style.border = `0.${shieldIndex}rem solid ${SHIELD_COLORS[shieldIndex]}`;
@@ -330,7 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function incrementShield() {
-    shieldLevel += 1;
+    shieldLevel++;
     const shieldIndex = Math.min(shieldLevel, SHIELD_COLORS.length - 1);
     playerCarImg.style.border = `0.${shieldIndex}rem solid ${SHIELD_COLORS[shieldIndex]}`;
     playerCar.style.boxShadow = `0px 0px 8px ${SHIELD_COLORS[shieldIndex]}`;
@@ -339,6 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function runFireEffect(element) {
     element.classList.add("exploding");
     element.innerHTML = EFFECT_TYPES.explode;
+    expMusic.play();
   }
 
   function checkCollision(a, b) {
@@ -399,12 +405,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (score >= scoreDiffIncrease) {
       scoreDiffIncrease += 8;
-      gameSpeed = Math.max(gameSpeed - 1, 0.5); // Yes, this is bad. Come up with a better approach and do it for me :)
-      objectInterval = gameSpeed * 1000;
+      gameSpeed = Math.max(gameSpeed - 1, 0.8); // Yes, this is bad. Come up with a better approach and do it for me :)
+      objectInterval = gameSpeed * 800;
 
       lanes.forEach((el) => {
-        el.style.animation = `road-animation 0.${gameSpeed}s linear infinite`;
+        el.style.animation = `none`;
       });
+
+      lanes.forEach((el) => {
+        el.style.animation = `road-animation 0.${Math.max(gameSpeed, 1)}s linear infinite`;
+      }); // idk what else to do efficiently
 
       if (gameSpeed === 0.5) {
         scoreDiffIncrease = 99999999; // Keeps score from triggering again after final stage, yes, this is 0 iq. Thank you for insulting me
@@ -431,9 +441,9 @@ document.addEventListener("DOMContentLoaded", () => {
       obj.cleanup();
     });
 
-    shieldLevel = 0;
-    multiplier = 1;
-    scoreDiffIncrease = 8;
+    shieldLevel = BASE_SHIELD_LVL;
+    multiplier = BASE_MULTIPLIER;
+    scoreDiffIncrease = BASE_DIFF_INC;
     gameSpeed = 5;
 
     lanes.forEach((el) => {
