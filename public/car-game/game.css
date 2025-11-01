@@ -98,6 +98,14 @@ h2 {
     );
     background-repeat: repeat-y;
 }
+.lane-line.invincible {
+    background-image: repeating-linear-gradient(
+        rgba(255, 0, 0, 0.4) 0,
+        rgba(255, 0, 0, 0.4) 20px,
+        transparent 20px,
+        transparent 40px
+    );
+}
 .object {
     position: absolute;
     max-height: 86px;
